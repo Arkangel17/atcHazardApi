@@ -1,0 +1,49 @@
+body {
+    padding-top: 50px;
+  }
+
+.address  {
+  width: 350px;
+
+}
+
+#inputbox{
+  width: 200px;
+
+}
+
+.pfiLogo{
+  width: 40%;
+  height: auto;
+}
+
+#chartContainer{
+  position: relative;
+  margin: auto;
+  height: 80vh;
+  width: 80vw;
+}
+
+#lineChart{
+  width: 1000px;
+  height: auto;
+}
+
+.mapContainer{
+  padding-top: 20px; 
+}
+
+#map{
+  width: 300px;
+  height: 300px;
+  border: solid;
+  border-color: rgb(5,237,255);
+}
+
+#hintBox{
+  display: none;
+  position: absolute;
+  width: 150px;
+  height: 25px;
+  background-color: lightgray;  
+}
