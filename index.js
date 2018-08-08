@@ -1,42 +1,7 @@
 const usgsURL = 'https://earthquake.usgs.gov/ws/designmaps/asce7-10.json';
 const geoCodeURL = 'https://maps.googleapis.com/maps/api/geocode/json?';
+const atcHazardURL = "https://api-hazards.atcouncil.org/public/v1/wind.json?";
 
-// let pdf = new jsPDF();
-
-// let button = document.querySelector('button');
-
-// let content = document.querySelector('#pdfContent');
-
-// button.addEventListener('click', printPDF);
-
-// function printPDF () {
-//     pdf.text(content);
-//     pdf.save();
-// }
-
-
-// var pdf = new jsPDF();
-// var specialElementHandlers = {
-//     '#editor': function (element, renderer) {
-//         return true;
-//     }
-// };
-
-// let margins = {
-//     top: 5,
-//     bottom: 60,
-//     left: 5,
-//     width: 1600
-// };
-
-// $('#savePDF').click(function () {
-//     pdf.fromHTML($('#pdfContent').html(), margins.left, margins.top, {
-//         'width': margins.width,
-//         'elementHandlers': specialElementHandlers
-//     }, function (bla) {
-//         pdf.save('saveInCallback.pdf');
-//     });
-// });
 
 
 //request through axios..
@@ -49,6 +14,7 @@ request = axios.get(geoCodeURL, {
     })
     .then(function (response) {
         latLong = response.data.results[0].geometry.location;
+        console.log('latLong', latLong);
         return latLong;
     })
     .catch(function (error) {
@@ -81,6 +47,34 @@ function usgsApiRequest(riskCategory, siteClass, otherInfo, title, callback) {
     }
 
 }
+
+function getAtcWindSpeed(atcHazardURL, geoCodeURL, address, callback) {
+
+    let geo = getLatLongFromAddress(geoCodeURL, address);
+
+
+    request = axios.get(atcHazardURL, {
+        params: {
+            lat: geo.lat,
+            long: geo.lng,
+        }, 
+        headers: {'api-key':'jag25mnn50pqucyk'}
+    })
+    .then(function (response) {
+        console.log('response', response);
+        return response;
+    })
+    .catch(function (error) {
+        console.log('error', error);
+    });
+
+
+return request;
+
+
+};
+
+
 
 function placesAPI(){
     let input = document.getElementById('autocomplete');
@@ -133,6 +127,7 @@ function renderResult(data, otherInfo) {
         <ul>
             <li> Date: ${store.request.date}</li>
             <li> Project: ${store.request.parameters.title}</li>
+            <li> Address: ${otherInfo.address}</li>
                 <ul>    
                     <li>Latitude:  ${store.request.parameters.latitude}</li>
                     <li>Longitude:  ${store.request.parameters.longitude}</li>
@@ -145,20 +140,20 @@ function renderResult(data, otherInfo) {
 
     <div>
         <ul>
-            <li> USGS Design Criteria </li>
+            <li class="bold"> USGS Design Criteria </li>
                 <ul>
                     <li> PGA: ${store.response.data.pga}</li>
                     <li> Ss: ${store.response.data.ss}</li>
                     <li> S1: ${store.response.data.s1}</li> 
                     <li> Sds: ${store.response.data.sds}</li>
                     <li> Sd1: ${store.response.data.sd1}</li>
-                    <li> SDC: ${store.response.data.sdc}</li>
+                    <li> SDC.Cntrl: ${store.response.data.sdc}</li>
                 </ul>
         </ul>        
     </div>
     <div>
     <ul>
-        <li> Seismic Properties</li>
+        <li class="bold"> Seismic Properties</li>
             <ul>
                 <li> Cs: ${cs}</li>
             </ul>
@@ -180,8 +175,8 @@ $('.hover').mousemove(function (e) {
         let x = e.screenX - this.offsetLeft;
         let y = e.screenY - this.offsetTop;
         $('#hintBox').css('top', y).css('left', x);
-        console.log('x', x);
-        console.log('y', y);
+        // console.log('x', x);
+        // console.log('y', y);
 
     })
     .mouseout(function () {
@@ -211,10 +206,10 @@ function getGraph(results) {
             datasets: [{
                 label: "Sds Data Pts",
                 backgroundColor: "rgb(224,255,255)",
-                borderColor: "rgb(5,237,255)",
+                borderColor: " rgb(93, 230, 240)",
                 borderWidth: 2,
                 hoverBackgroundColor: "rgb(187,255,255)",
-                hoverBorderColor: "rgb(5,237,255)",
+                hoverBorderColor: " rgb(93, 230, 240)",
                 data: yDataPts,
             }]
         },
@@ -276,15 +271,16 @@ function watchSubmit() {
 
         let otherInfo = {
             respModFtr,
-            seisImpFtr
+            seisImpFtr,
+            address
         };
 
-
         let geo = getLatLongFromAddress(geoCodeURL, address)
-            .then(usgsApiRequest(riskCategory, siteClass, otherInfo, title, getSeisData));
-        
-        console.log('res', typeof(geo));
+            .then(usgsApiRequest(riskCategory, siteClass, otherInfo, title, getSeisData))
+            .then(getAtcWindSpeed(atcHazardURL));
     });
-  }
+
+
+};
 
 $(watchSubmit);
