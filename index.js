@@ -14,12 +14,13 @@ request = axios.get(geoCodeURL, {
     })
     .then(function (response) {
         latLong = response.data.results[0].geometry.location;
-        console.log('latLong', latLong);
         return latLong;
     })
     .catch(function (error) {
         console.log('error', error);
     });
+
+    console.log('res:', request);
 
 return request;
 }
@@ -38,7 +39,7 @@ function usgsApiRequest(riskCategory, siteClass, otherInfo, title, callback) {
             title
         };
 
-        $.getJSON(usgsURL, query, function (results) {
+        $.getJSON(usgsURL, query, (results) => {
             callback(results, otherInfo);
             getGraph(results);
             initMap(query);
@@ -48,31 +49,53 @@ function usgsApiRequest(riskCategory, siteClass, otherInfo, title, callback) {
 
 }
 
-function getAtcWindSpeed(atcHazardURL, geoCodeURL, address, callback) {
+function getSeisData(data, otherInfo) {
+    let results = renderResult(data, otherInfo);
+    $('.desCritInfo').html(results);
+    return results;
+}
 
-    let geo = getLatLongFromAddress(geoCodeURL, address);
-
-
-    request = axios.get(atcHazardURL, {
+function getAtcWindSpeed(atcHazardURL, callback) {
+    request = axios.get(geoCodeURL, {
         params: {
-            lat: geo.lat,
-            long: geo.lng,
-        }, 
-        headers: {'api-key':'jag25mnn50pqucyk'}
+            address,
+            key: 'AIzaSyAS1ppQZ0RbK3k5Zv121KdtG61DqY_Mrno'
+        }
     })
     .then(function (response) {
-        console.log('response', response);
-        return response;
+        latLong = response.data.results[0].geometry.location;
+        return latLong;
     })
     .catch(function (error) {
         console.log('error', error);
     });
+    console.log('gets here');
+
+    return function (geo) {
+        const query = {
+            headers: {
+                'api-key': 'jag25mnn50pqucyk'
+            },
+            lat: geo.lat,
+            long: geo.lng        
+        };
+    console.log('lat', query.lat);
+
+        $.getJSON(atcHazardURL, query, function (results) {
+            callback(results);
+
+        });
+    };
+
+}
 
 
-return request;
+function shoWind(datasets){
+    let info = datasets;
+    console.log('what:', info[0].data.value);
+    return datasets;
+}
 
-
-};
 
 
 
@@ -115,7 +138,7 @@ function initMap(query){
     });
 
 
-};
+}
 
 
 
@@ -162,11 +185,7 @@ function renderResult(data, otherInfo) {
   `;
 }
 
-function getSeisData(data, otherInfo) {
-    let results = renderResult(data, otherInfo);
-    $('.desCritInfo').html(results);
-    return results;
-}
+
 
 //Dynamic UI Functions....
 $('.hover').mousemove(function (e) {
@@ -275,12 +294,12 @@ function watchSubmit() {
             address
         };
 
-        let geo = getLatLongFromAddress(geoCodeURL, address)
+        let what = getLatLongFromAddress(geoCodeURL, address)
             .then(usgsApiRequest(riskCategory, siteClass, otherInfo, title, getSeisData))
-            .then(getAtcWindSpeed(atcHazardURL));
+            .then(getAtcWindSpeed(atcHazardURL, shoWind));
+
+            
     });
-
-
-};
+}
 
 $(watchSubmit);
