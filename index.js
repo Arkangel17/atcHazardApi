@@ -17,10 +17,7 @@ request = axios.get(geoCodeURL, {
         return latLong;
     })
     .catch(function (error) {
-        console.log('error', error);
     });
-
-    console.log('res:', request);
 
 return request;
 }
@@ -55,7 +52,7 @@ function getSeisData(data, otherInfo) {
     return results;
 }
 
-function getAtcWindSpeed(atcHazardURL, callback) {
+function getAtcWindSpeed(atcHazardURL, address, callback) {
     request = axios.get(geoCodeURL, {
         params: {
             address,
@@ -67,19 +64,17 @@ function getAtcWindSpeed(atcHazardURL, callback) {
         return latLong;
     })
     .catch(function (error) {
-        console.log('error', error);
     });
-    console.log('gets here');
 
-    return function (geo) {
+    return function (request) {
         const query = {
             headers: {
                 'api-key': 'jag25mnn50pqucyk'
             },
-            lat: geo.lat,
-            long: geo.lng        
+            lat: request.lat,
+            long: request.lng        
         };
-    console.log('lat', query.lat);
+    console.log('query.lat:', query.lat);
 
         $.getJSON(atcHazardURL, query, function (results) {
             callback(results);
@@ -165,9 +160,15 @@ function renderResult(data, otherInfo) {
         <ul>
             <li class="bold"> USGS Design Criteria </li>
                 <ul>
-                    <li> PGA: ${store.response.data.pga}</li>
+                    <li> pga: ${store.response.data.pga}</li>
+                    <li> Fpga: ${store.response.data.fpga}</li>
+                    <li> PgaM: ${store.response.data.pgam}</li>
                     <li> Ss: ${store.response.data.ss}</li>
                     <li> S1: ${store.response.data.s1}</li> 
+                    <li> Sm1: ${store.response.data.sm1}</li>
+                    <li> Sms: ${store.response.data.sms}</li>
+                    <li> Fa: ${store.response.data.fa}</li>
+                    <li> Fv: ${store.response.data.fv}</li>
                     <li> Sds: ${store.response.data.sds}</li>
                     <li> Sd1: ${store.response.data.sd1}</li>
                     <li> SDC.Cntrl: ${store.response.data.sdc}</li>
@@ -193,9 +194,6 @@ $('.hover').mousemove(function (e) {
         $('#hintBox').text(hoverText).show();
         let x = e.screenX - this.offsetLeft;
         let y = e.screenY - this.offsetTop;
-        $('#hintBox').css('top', y).css('left', x);
-        // console.log('x', x);
-        // console.log('y', y);
 
     })
     .mouseout(function () {
@@ -261,27 +259,35 @@ function watchSubmit() {
     placesAPI();
 
     $('.designCrit').submit(event => {
+
         event.preventDefault();
+
         const addressTarget = $(event.currentTarget).find('.address');
-        const address = addressTarget.val();
-        // const latitudeTarget = $(event.currentTarget).find('.latitude');
-        // const latitude = latitudeTarget.val();
-        // const longitudeTarget = $(event.currentTarget).find('.longitude');
-        // const longitude = longitudeTarget.val();
+        let address = addressTarget.val() || "99 Green Street, San Francisco, CA, USA";
         const riskCatTarget = $(event.currentTarget).find('.riskCategory');
-        const riskCategory = riskCatTarget.val();
+        let riskCategory = riskCatTarget.val() || "III";
         const siteClassTarget = $(event.currentTarget).find('.siteClass');
-        const siteClass = siteClassTarget.val();
+        let siteClass = siteClassTarget.val() || "C";
         const respModFtrTarget = $(event.currentTarget).find('.respModFtr');
-        const respModFtr = parseFloat(respModFtrTarget.val());
+        let respModFtr = parseFloat(respModFtrTarget.val()) || "6.5";
         const seisImpFtrTarget = $(event.currentTarget).find('.seisImpFtr');
-        const seisImpFtr = parseFloat(seisImpFtrTarget.val());
+        let seisImpFtr = parseFloat(seisImpFtrTarget.val()) || "1.25";
         const titleTarget = $(event.currentTarget).find('.title');
-        const title = titleTarget.val();
+        let title = titleTarget.val() || "Test";
+
+        let resObject = {
+            address,
+            riskCategory,
+            siteClass,
+            respModFtr,
+            seisImpFtr,
+            title
+        }
+
+    //    console.log("resObject", resObject);
+
         // clear out the input
         addressTarget.val("");
-        // latitudeTarget.val("");
-        // longitudeTarget.val("");
         riskCatTarget.val("");
         siteClassTarget.val("");
         respModFtrTarget.val("");
@@ -294,9 +300,11 @@ function watchSubmit() {
             address
         };
 
-        let what = getLatLongFromAddress(geoCodeURL, address)
-            .then(usgsApiRequest(riskCategory, siteClass, otherInfo, title, getSeisData))
-            .then(getAtcWindSpeed(atcHazardURL, shoWind));
+    getLatLongFromAddress(geoCodeURL, address)
+         .then(usgsApiRequest(riskCategory, siteClass, otherInfo, title, getSeisData));
+
+    getLatLongFromAddress(geoCodeURL, address)
+         .then(getAtcWindSpeed(atcHazardURL, shoWind));
 
             
     });
