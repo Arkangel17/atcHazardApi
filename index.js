@@ -36,6 +36,8 @@ function usgsApiRequest(riskCategory, siteClass, otherInfo, title, callback) {
             title
         };
 
+        console.log('gets here b4');
+
         $.getJSON(usgsURL, query, (results) => {
             callback(results, otherInfo);
             getGraph(results);
@@ -52,35 +54,61 @@ function getSeisData(data, otherInfo) {
     return results;
 }
 
-function getAtcWindSpeed(atcHazardURL, address, callback) {
-    request = axios.get(geoCodeURL, {
-        params: {
-            address,
-            key: 'AIzaSyAS1ppQZ0RbK3k5Zv121KdtG61DqY_Mrno'
+
+function getAtcWindSpeed(atcHazardURL, info) {
+
+    console.log('info', info);
+
+    let settings = {
+        "async": true,
+        "crossDomain": true,
+        "url": `https://api-hazards.atcouncil.org/public/v1/wind.json?lat=${info.lat}&lng=-${info.lng}`,
+        "method": "GET",
+        "headers": {
+          "api-key": "jag25mnn50pqucyk",
         }
-    })
-    .then(function (response) {
-        latLong = response.data.results[0].geometry.location;
-        return latLong;
-    })
-    .catch(function (error) {
-    });
+      }
+      
+      $.ajax(settings).done(function (response) {
+        console.log(response);
+      });
 
-    return function (request) {
-        const query = {
-            headers: {
-                'api-key': 'jag25mnn50pqucyk'
-            },
-            lat: request.lat,
-            long: request.lng        
-        };
-    console.log('query.lat:', query.lat);
 
-        $.getJSON(atcHazardURL, query, function (results) {
-            callback(results);
 
-        });
-    };
+
+
+    // //OPTION #1:
+    // $.ajax({
+    //     url: atcHazardURL + "lat=" + 37.80037 + "&lng=" + -122.401198,         
+    //     method: 'GET',
+    //     headers: {'api-key': 'jag25mnn50pqucyk'},
+    //     crossDomain: true,
+    //     dataType: 'jsonp',
+    //     // data: {lat: 37.80037, long: -122.401198 },
+    //     success: (data) => {
+    //         console.log("Data:", data);
+    //     },
+    //     beforeSend: (xhr) => {
+    //         xhr.setRequestHeader('api-key','jag25mnn50pqucyk');
+    //     }
+
+    //   });
+
+    //OPTION #2: 
+    // return function (request) {
+    //     const query = {
+    //         // header: {
+    //         //     'api-key': 'jag25mnn50pqucyk'
+    //         // },
+    //         lat: 37.80037,
+    //         long: -122.401198        
+    //     };
+
+    //     $.getJSON(atcHazardURL, query, function (results) {
+    //         callback(results);
+
+    //     });
+    // };
 
 }
 
@@ -284,8 +312,6 @@ function watchSubmit() {
             title
         }
 
-    //    console.log("resObject", resObject);
-
         // clear out the input
         addressTarget.val("");
         riskCatTarget.val("");
@@ -304,7 +330,7 @@ function watchSubmit() {
          .then(usgsApiRequest(riskCategory, siteClass, otherInfo, title, getSeisData));
 
     getLatLongFromAddress(geoCodeURL, address)
-         .then(getAtcWindSpeed(atcHazardURL, shoWind));
+         .then(getAtcWindSpeed(atcHazardURL, request));
 
             
     });
