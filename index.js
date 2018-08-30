@@ -47,7 +47,13 @@ function usgsApiRequest(geo, riskCategory, siteClass, otherInfo, title, callback
 }
 
 function getSeisData(data, otherInfo) {
-    let results = renderResult(data, otherInfo);
+    let results = renderSeisResult(data, otherInfo);
+    $('.desCritInfo').html(results);
+    return results;
+}
+
+function getWindData(res) {
+    let results = renderWindResults(res);
     $('.desCritInfo').html(results);
     return results;
 }
@@ -69,18 +75,10 @@ function getAtcWindSpeed(atcHazardURL, info) {
       
       $.ajax(settings).done(function (response) {
         console.log(response);
+        getWindData(response);
       });
 
 }
-
-
-function shoWind(datasets){
-    let info = datasets;
-    console.log('what:', info[0].data.value);
-    return datasets;
-}
-
-
 
 
 function placesAPI(){
@@ -126,9 +124,10 @@ function initMap(query){
 
 
 
-function renderResult(data, otherInfo) {
+function renderSeisResult(data, otherInfo) {
     let store = data;
     let cs = (store.response.data.sds * otherInfo.seisImpFtr) / otherInfo.respModFtr;
+
   return `
     <div>
         <ul>
@@ -162,7 +161,7 @@ function renderResult(data, otherInfo) {
                     <li> Sd1: ${store.response.data.sd1}</li>
                     <li> SDC.Cntrl: ${store.response.data.sdc}</li>
                 </ul>
-        </ul>        
+        </ul>   
     </div>
     <div>
     <ul>
@@ -174,6 +173,40 @@ function renderResult(data, otherInfo) {
 </div>
   `;
 }
+
+
+function renderWindResults(datasets) {
+
+    return `
+    <div>
+        <ul>
+            <li class="bold"> ATC WINDSPEEDS </li>
+                <ul>
+                <li> elevation: ${datasets.elevation} </li>
+                    <li> asce716: </li>
+                        <ul>
+                            <li> riskCat I: </li>
+                            <li> riskCat II: </li>
+                            <li> riskCat III: </li>
+                            <li> riskCat IV: </li>
+                        </ul>
+                </ul>
+                <ul>
+                <li> asce710: </li>
+                    <ul>
+                    <li> riskCat I: </li>
+                    <li> riskCat II: </li>
+                    <li> riskCat III: </li>
+                    <li> riskCat IV: </li>
+                    </ul>
+                </ul>
+        </ul>
+    </div>
+
+  `;
+}
+
+
 
 
 
