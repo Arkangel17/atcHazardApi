@@ -1,101 +1,84 @@
 const usgsURL = 'https://earthquake.usgs.gov/ws/designmaps/asce7-10.json';
 const geoCodeURL = 'https://maps.googleapis.com/maps/api/geocode/json?';
-const atcHazardURL = "https://api-hazards.atcouncil.org/public/v1/wind.json?";
+const atcWindURL = "https://api-hazards.atcouncil.org/public/v1/wind.json?";
 
+function getLatLongFromAddress(geoCodeURL, address) {
 
-
-//request through axios..
-function getLatLongFromAddress(geoCodeURL, address){
-
-
- return axios.get(geoCodeURL, {
+    return axios.get(geoCodeURL, {
             params: {
                 address,
                 key: 'AIzaSyAS1ppQZ0RbK3k5Zv121KdtG61DqY_Mrno'
             }
         })
         .then(function (response) {
-            latLong = response.data.results[0].geometry.location;
-            return latLong;
+            return getLatLong(response);
         })
-        .catch(function (error) {});
+        .catch(function (reject) {
+            console.log('error');
+        });
+}
+
+function usgsApiRequest(geo, riskCategory, siteClass, otherInfo, title) {
+        console.log('geo', geo);
+
+    return axios.get(usgsURL, {
+            params: {
+                latitude: geo.lat,
+                longitude: geo.lng,
+                riskCategory,
+                siteClass,
+                title
+            }
+        })
+        .then(function (response) {
+            let test = getSeisData(response, otherinfo);
+            console.log('test', test);
+            return{
+                'seisData': getSeisData(response, otherinfo),
+                'graph': getGraph(response),
+                'map': initMap(geo)
+            }
+        })
+        .catch(function (reject) {
+            console.log('error @ usgsApiReq');
+        });
 
 }
+
 
 
 //STUDY PROMISES + CLOSURES + CALLBACK FUNCTIONS
 
-function usgsApiRequest(geo, riskCategory, siteClass, otherInfo, title, callback) {
-
-        let query = {
-            latitude: geo.lat,
-            longitude: geo.lng,
-            riskCategory,
-            siteClass,
-            title
-        }
-
-
-        $.getJSON(usgsURL, query, (results) => {
-            callback(results, otherInfo);
-            getGraph(results);
-            initMap(query);
-        });
-
-
+function getLatLong(res) {
+    latLong = res.data.results[0].geometry.location;
+    console.log('latLong', latLong);
+    return latLong;
 
 }
 
 function getSeisData(data, otherInfo) {
+    console.log('data', data);
     let results = renderSeisResult(data, otherInfo);
     $('.desCritInfo').html(results);
     return results;
 }
 
-function getWindData(res) {
-    let results = renderWindResults(res);
-    $('.desCritInfo').html(results);
-    return results;
-}
 
-
-function getAtcWindSpeed(atcHazardURL, info) {
-
-    console.log('info', info);
-
-    let settings = {
-        "async": true,
-        "crossDomain": true,
-        "url": `https://api-hazards.atcouncil.org/public/v1/wind.json?lat=${info.lat}&lng=${info.lng}`,
-        "method": "GET",
-        "headers": {
-          "api-key": "jag25mnn50pqucyk",
-        }
-      }
-      
-      $.ajax(settings).done(function (response) {
-        console.log(response);
-        getWindData(response);
-      });
-
-}
-
-
-function placesAPI(){
+function placesAPI() {
     let input = document.getElementById('autocomplete');
     let autocomplete = new google.maps.places.Autocomplete(input);
 }
 
 
 
-function initMap(query){
+function initMap(query) {
 
     let location = {
         lat: query.latitude,
         lng: query.longitude
     };
 
-    let map = new google.maps.Map(document.getElementById('map'),{
+    let map = new google.maps.Map(document.getElementById('map'), {
         center: location,
         zoom: 17
     });
@@ -108,27 +91,27 @@ function initMap(query){
     let image = {
         "url": imageURL,
         "scaledSize": new google.maps.Size(30, 30),
-        "origin": new google.maps.Point(0,0),
-        "anchor": new google.maps.Point(0,0)
+        "origin": new google.maps.Point(0, 0),
+        "anchor": new google.maps.Point(0, 0)
     };
 
     let frogPin = new google.maps.Marker({
-       position: location,
-       map,
-       icon: image,
-       title: 'hello'
+        position: location,
+        map,
+        icon: image,
+        title: 'hello'
     });
 
 
 }
 
-
+///HOW THIS WAS NOT HERE IN MASTER BRANCH
 
 function renderSeisResult(data, otherInfo) {
     let store = data;
     let cs = (store.response.data.sds * otherInfo.seisImpFtr) / otherInfo.respModFtr;
 
-  return `
+    return `
     <div>
         <ul>
             <li> Date: ${store.request.date}</li>
@@ -220,19 +203,19 @@ $('.hover').mousemove(function (e) {
     })
     .mouseout(function () {
         $('#hintBox').hide();
-});
+    });
 
 //what the hell
 
 function getGraph(results) {
     let ctx = $('#lineChart');
     let sdSpectrum = results.response.data.sdSpectrum;
-    let sdSpecType = typeof(sdSpectrum);
+    let sdSpecType = typeof (sdSpectrum);
 
-    let xDataPts = sdSpectrum.map((item, index)=>{
+    let xDataPts = sdSpectrum.map((item, index) => {
         return item[0];
     });
-    let yDataPts = sdSpectrum.map((item, index)=>{
+    let yDataPts = sdSpectrum.map((item, index) => {
         return item[1];
     });
 
@@ -319,19 +302,21 @@ function watchSubmit() {
             seisImpFtr,
             address
         };
-        
-getLatLongFromAddress(geoCodeURL, address)
-        .then((geo) => {
-            usgsApiRequest(geo, riskCategory, siteClass, otherInfo, title, getSeisData)
-        });
-         
-getLatLongFromAddress(geoCodeURL, address)
-        .then((data) => {
-            getAtcWindSpeed(atcHazardURL, data);
-        });
 
-            
+        let p1 = getLatLongFromAddress(geoCodeURL, address); 
+        let p2 =  p1.then((geo) =>{
+            usgsApiRequest(geo, riskCategory, siteClass, otherInfo, title);
+        });
+    //             getAtcWindSpeed(atcHazardURL, geo);
+    //         });
+
+
+    Promise.all([p1, p2]).then(values => {
+
+        console.log('values', values);
     });
+
+});
 }
 
 $(watchSubmit);
