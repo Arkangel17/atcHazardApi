@@ -103,8 +103,8 @@ function placesAPI() {
 function initMap(query) {
 
     let location = {
-        lat: query.latitude,
-        lng: query.longitude
+        lat: query.lat,
+        lng: query.lng
     };
 
     let map = new google.maps.Map(document.getElementById('map'), {
@@ -137,22 +137,22 @@ function initMap(query) {
 
 
 function renderSeisResult(data, otherInfo) {
-    let store = data;
-    let cs = (store.response.data.sds * otherInfo.seisImpFtr) / otherInfo.respModFtr;
+
+    let cs = (data.response.data.sds * otherInfo.seisImpFtr) / otherInfo.respModFtr;
 
     return `
     <div>
         <ul>
-            <li> Date: ${store.request.date}</li>
-            <li> Project: ${store.request.parameters.title}</li>
+            <li> Date: ${data.request.date}</li>
+            <li> Project: ${data.request.parameters.title}</li>
             <li> Address: ${otherInfo.address}</li>
                 <ul>    
-                    <li>Latitude:  ${store.request.parameters.latitude}</li>
-                    <li>Longitude:  ${store.request.parameters.longitude}</li>
-                    <li>Risk Category:  ${store.request.parameters.riskCategory}</li>
-                    <li>Site Class:  ${store.request.parameters.siteClass}</li>
+                    <li>Latitude:  ${data.request.parameters.latitude}</li>
+                    <li>Longitude:  ${data.request.parameters.longitude}</li>
+                    <li>Risk Category:  ${data.request.parameters.riskCategory}</li>
+                    <li>Site Class:  ${data.request.parameters.siteClass}</li>
                 </ul>
-            <li> Code: ${store.request.referenceDocument}</li>            
+            <li> Code: ${data.request.referenceDocument}</li>            
         </ul>
     </div>
 
@@ -160,18 +160,18 @@ function renderSeisResult(data, otherInfo) {
         <ul>
             <li class="bold"> USGS Design Criteria </li>
                 <ul>
-                    <li> pga: ${store.response.data.pga}</li>
-                    <li> Fpga: ${store.response.data.fpga}</li>
-                    <li> PgaM: ${store.response.data.pgam}</li>
-                    <li> Ss: ${store.response.data.ss}</li>
-                    <li> S1: ${store.response.data.s1}</li> 
-                    <li> Sm1: ${store.response.data.sm1}</li>
-                    <li> Sms: ${store.response.data.sms}</li>
-                    <li> Fa: ${store.response.data.fa}</li>
-                    <li> Fv: ${store.response.data.fv}</li>
-                    <li> Sds: ${store.response.data.sds}</li>
-                    <li> Sd1: ${store.response.data.sd1}</li>
-                    <li> SDC.Cntrl: ${store.response.data.sdc}</li>
+                    <li> pga: ${data.response.data.pga}</li>
+                    <li> Fpga: ${data.response.data.fpga}</li>
+                    <li> PgaM: ${data.response.data.pgam}</li>
+                    <li> Ss: ${data.response.data.ss}</li>
+                    <li> S1: ${data.response.data.s1}</li> 
+                    <li> Sm1: ${data.response.data.sm1}</li>
+                    <li> Sms: ${data.response.data.sms}</li>
+                    <li> Fa: ${data.response.data.fa}</li>
+                    <li> Fv: ${data.response.data.fv}</li>
+                    <li> Sds: ${data.response.data.sds}</li>
+                    <li> Sd1: ${data.response.data.sd1}</li>
+                    <li> SDC.Cntrl: ${data.response.data.sdc}</li>
                 </ul>
         </ul>   
     </div>
@@ -234,7 +234,7 @@ $('.hover').mousemove(function (e) {
         $('#hintBox').hide();
     });
 
-//what the hell
+
 
 function getGraph(results) {
     let ctx = $('#lineChart');
@@ -342,6 +342,13 @@ function watchSubmit() {
 
     Promise.all([p1, p2]).then(values => {
         console.log('values', values);
+        let geoData = values[0];
+        console.log('geoData', geoData);
+        let seisData = values[1];
+        renderSeisResult(seisData, otherInfo);
+        getGraph(seisData);
+        initMap(geoData);
+        
     });
 
 });
