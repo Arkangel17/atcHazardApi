@@ -2,6 +2,8 @@ const usgsURL = 'https://earthquake.usgs.gov/ws/designmaps/asce7-10.json';
 const geoCodeURL = 'https://maps.googleapis.com/maps/api/geocode/json?';
 const atcHazardURL = "https://api-hazards.atcouncil.org/public/v1/wind.json?";
 
+
+
 function getLatLongFromAddress(geoCodeURL, address) {
 
     return axios.get(geoCodeURL, {
@@ -52,12 +54,14 @@ function usgsData(res){
 }
 
 
-function getSeisData(data, otherInfo) {
-    console.log('gets here');
-    let results = renderSeisResult(data, otherInfo);
-    $('.desCritInfo').html(results);
-    return results;
-}
+
+
+// function getSeisData(data, otherInfo) {
+//     console.log('gets here');
+//     let results = renderSeisResult(data, otherInfo);
+//     $('.desCritInfo').html(results);
+//     return results;
+// }
 
 // function getWindData(res) {
 //     let results = renderWindResults(res);
@@ -66,32 +70,35 @@ function getSeisData(data, otherInfo) {
 // }
 
 
-// function getAtcWindSpeed(atcHazardURL, info) {
+function getAtcWindSpeed(atcHazardURL, geo) {
 
-//     return axios.get(atcHazardURL, {
-//         params: {
-//             settings,
-//         }
-//     })
+    // let settings = {
+    //     "async": true,
+    //     "crossDomain": true,
+    //     "url": `https://api-hazards.atcouncil.org/public/v1/wind.json?lat=${geo.lat}&lng=${geo.lng}`,
+    //     "method": "GET",
+    //     "headers": {
+    //       "api-key": "jag25mnn50pqucyk",
+    //     }
+    // }
 
+    return axios.get(atcHazardURL, {
+        params: {
+            lat: geo.lat,
+            lng: geo.lng
+        },
+        headers: {
+            "api-key": "jag25mnn50pqucyk" 
+        }
+    })
+    .then(function(response){
+        return response;
+    })
+    .catch(function(reject){
+        console.log('error mo fo')
+    });
+}
 
-//     let settings = {
-//         "async": true,
-//         "crossDomain": true,
-//         "url": `https://api-hazards.atcouncil.org/public/v1/wind.json?lat=${info.lat}&lng=${info.lng}`,
-//         "method": "GET",
-//         "headers": {
-//           "api-key": "jag25mnn50pqucyk",
-//         }
-//       }
-
-//       $.ajax(settings).done(function (response) {
-//         console.log(response);
-//         getWindData(response);
-//       });
-
-// }
-// });
 
 function placesAPI() {
     let input = document.getElementById('autocomplete');
@@ -332,26 +339,38 @@ function watchSubmit() {
             address
         };
 
-        let p1 = getLatLongFromAddress(geoCodeURL, address); 
-        let p2 =  p1.then((geo) =>{
-            return usgsApiRequest(geo, riskCategory, siteClass, otherInfo, title);
-        });
-    //             getAtcWindSpeed(atcHazardURL, geo);
-    //         });
 
+        getLatLongFromAddress(geoCodeURL, address).then(geo => {
+            let promises = [usgsApiRequest(geo, riskCategory, siteClass, otherInfo, title), getAtcWindSpeed(atcHazardURL, geo)];
+            Promise.all(promises).then(results => {
+                let res = {
+                    'usgs': results[0],
+                    'atc': results[1]
+                }
 
-    Promise.all([p1, p2]).then(values => {
-        console.log('values', values);
-        let geoData = values[0];
-        console.log('geoData', geoData);
-        let seisData = values[1];
-        renderSeisResult(seisData, otherInfo);
-        getGraph(seisData);
-        initMap(geoData);
+                console.log('res', res);
+            });
         
-    });
+        })
+
+    //     let p1 = getLatLongFromAddress(geoCodeURL, address); 
+    //     let p2 =  p1.then((geo) =>{
+    //         return usgsApiRequest(geo, riskCategory, siteClass, otherInfo, title);
+    //     });
+
+    // Promise.all([p1, p2]).then(values => {
+    //     let geoData = values[0];
+    //     let seisData = values[1];
+    //     // let WindData = ...
+    //     renderSeisResult(seisData, otherInfo);
+    //     getGraph(seisData);
+    //     initMap(geoData);
+        
+    // });
 
 });
 }
 
 $(watchSubmit);
+
+
