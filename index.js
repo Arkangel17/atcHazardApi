@@ -1,6 +1,7 @@
 const usgsURL = 'https://earthquake.usgs.gov/ws/designmaps/asce7-10.json';
 const geoCodeURL = 'https://maps.googleapis.com/maps/api/geocode/json?';
-const atcHazardURL = "https://api-hazards.atcouncil.org/public/v1/wind.json?";
+const atcWindURL = "https://api-hazards.atcouncil.org/public/v1/wind.json?";
+const atcSnowURL = "https://api-hazards.atcouncil.org/public/v1/snow.json?";
 
 
 
@@ -54,35 +55,36 @@ function usgsData(res){
 }
 
 
+function renderData(seisData, winData, snowData, otherInfo) {
+    let results = renderResult(seisData, winData, snowData, otherInfo);
+    $('.desCritInfo').html(results);
+    return results;
+}
 
 
-// function getSeisData(data, otherInfo) {
-//     console.log('gets here');
-//     let results = renderSeisResult(data, otherInfo);
-//     $('.desCritInfo').html(results);
-//     return results;
-// }
+function getAtcWindSpeed(atcWindURL, geo) {
 
-// function getWindData(res) {
-//     let results = renderWindResults(res);
-//     $('.desCritInfo').html(results);
-//     return results;
-// }
+    return axios.get(atcWindURL, {
+        params: {
+            lat: geo.lat,
+            lng: geo.lng
+        },
+        headers: {
+            "api-key": "jag25mnn50pqucyk" 
+        }
+    })
+    .then(function(response){
+        return response;
+    })
+    .catch(function(reject){
+        console.log('error mo fo')
+    });
+}
 
 
-function getAtcWindSpeed(atcHazardURL, geo) {
+function getAtcSnowLoad(atcSnowURL, geo) {
 
-    // let settings = {
-    //     "async": true,
-    //     "crossDomain": true,
-    //     "url": `https://api-hazards.atcouncil.org/public/v1/wind.json?lat=${geo.lat}&lng=${geo.lng}`,
-    //     "method": "GET",
-    //     "headers": {
-    //       "api-key": "jag25mnn50pqucyk",
-    //     }
-    // }
-
-    return axios.get(atcHazardURL, {
+    return axios.get(atcSnowURL, {
         params: {
             lat: geo.lat,
             lng: geo.lng
@@ -143,23 +145,23 @@ function initMap(query) {
 
 
 
-function renderSeisResult(data, otherInfo) {
+function renderResult(seisData, winData, snowData, otherInfo) {
 
-    let cs = (data.response.data.sds * otherInfo.seisImpFtr) / otherInfo.respModFtr;
+    let cs = (seisData.response.data.sds * otherInfo.seisImpFtr) / otherInfo.respModFtr;
 
     return `
     <div>
         <ul>
-            <li> Date: ${data.request.date}</li>
-            <li> Project: ${data.request.parameters.title}</li>
+            <li> Date: ${seisData.request.date}</li>
+            <li> Project: ${seisData.request.parameters.title}</li>
             <li> Address: ${otherInfo.address}</li>
                 <ul>    
-                    <li>Latitude:  ${data.request.parameters.latitude}</li>
-                    <li>Longitude:  ${data.request.parameters.longitude}</li>
-                    <li>Risk Category:  ${data.request.parameters.riskCategory}</li>
-                    <li>Site Class:  ${data.request.parameters.siteClass}</li>
+                    <li>Latitude:  ${seisData.request.parameters.latitude}</li>
+                    <li>Longitude:  ${seisData.request.parameters.longitude}</li>
+                    <li>Risk Category:  ${seisData.request.parameters.riskCategory}</li>
+                    <li>Site Class:  ${seisData.request.parameters.siteClass}</li>
                 </ul>
-            <li> Code: ${data.request.referenceDocument}</li>            
+            <li> Code: ${seisData.request.referenceDocument}</li>            
         </ul>
     </div>
 
@@ -167,18 +169,18 @@ function renderSeisResult(data, otherInfo) {
         <ul>
             <li class="bold"> USGS Design Criteria </li>
                 <ul>
-                    <li> pga: ${data.response.data.pga}</li>
-                    <li> Fpga: ${data.response.data.fpga}</li>
-                    <li> PgaM: ${data.response.data.pgam}</li>
-                    <li> Ss: ${data.response.data.ss}</li>
-                    <li> S1: ${data.response.data.s1}</li> 
-                    <li> Sm1: ${data.response.data.sm1}</li>
-                    <li> Sms: ${data.response.data.sms}</li>
-                    <li> Fa: ${data.response.data.fa}</li>
-                    <li> Fv: ${data.response.data.fv}</li>
-                    <li> Sds: ${data.response.data.sds}</li>
-                    <li> Sd1: ${data.response.data.sd1}</li>
-                    <li> SDC.Cntrl: ${data.response.data.sdc}</li>
+                    <li> pga: ${seisData.response.data.pga}</li>
+                    <li> Fpga: ${seisData.response.data.fpga}</li>
+                    <li> PgaM: ${seisData.response.data.pgam}</li>
+                    <li> Ss: ${seisData.response.data.ss}</li>
+                    <li> S1: ${seisData.response.data.s1}</li> 
+                    <li> Sm1: ${seisData.response.data.sm1}</li>
+                    <li> Sms: ${seisData.response.data.sms}</li>
+                    <li> Fa: ${seisData.response.data.fa}</li>
+                    <li> Fv: ${seisData.response.data.fv}</li>
+                    <li> Sds: ${seisData.response.data.sds}</li>
+                    <li> Sd1: ${seisData.response.data.sd1}</li>
+                    <li> SDC.Cntrl: ${seisData.response.data.sdc}</li>
                 </ul>
         </ul>   
     </div>
@@ -190,42 +192,52 @@ function renderSeisResult(data, otherInfo) {
             </ul>
     </ul>        
 </div>
-  `;
-}
 
-
-function renderWindResults(datasets) {
-
-    return `
-    <div>
+<div>
+<ul>
+    <li class="bold"> ATC WINDSPEEDS </li>
         <ul>
-            <li class="bold"> ATC WINDSPEEDS </li>
+        <li> ELEVATION: ${winData.data.elevation} </li>
+            <li> ASCE 7-16: </li>
                 <ul>
-                <li> elevation: ${datasets.elevation} </li>
-                    <li> asce716: </li>
-                        <ul>
-                            <li> riskCat I: </li>
-                            <li> riskCat II: </li>
-                            <li> riskCat III: </li>
-                            <li> riskCat IV: </li>
-                        </ul>
-                </ul>
-                <ul>
-                <li> asce710: </li>
-                    <ul>
-                    <li> riskCat I: </li>
-                    <li> riskCat II: </li>
-                    <li> riskCat III: </li>
-                    <li> riskCat IV: </li>
-                    </ul>
+                    <li> riskCat I: ${winData.data.datasets[4].data.value} </li>
+                    <li> riskCat II: ${winData.data.datasets[5].data.value}</li>
+                    <li> riskCat III: ${winData.data.datasets[6].data.value}</li>
+                    <li> riskCat IV: ${winData.data.datasets[7].data.value}</li>
                 </ul>
         </ul>
-    </div>
+        <ul>
+            <li> ASCE 7-10: </li>
+                <ul>
+                    <li> riskCat I: ${winData.data.datasets[12].data.value}</li>
+                    <li> riskCat II: ${winData.data.datasets[13].data.value}</li>
+                    <li> riskCat III-IV: ${winData.data.datasets[14].data.value}</li>
+                </ul>
+        </ul>
+</ul>
+</div>
+
+<div>
+<ul>
+    <li class="bold"> ATC SNOW LOADS </li>
+        <ul>
+        <li> ELEVATION: ${snowData.data.elevation} </li>
+            <li> ASCE 7-16: </li>
+                <ul>
+                    <li>Grd Snow Load: ${snowData.data.datasets[0].data.value} </li>
+                </ul>
+        </ul>
+        <ul>
+            <li> ASCE 7-10: </li>
+                <ul>
+                    <li>Grd Snow Load: ${snowData.data.datasets[1].data.value}</li>
+                </ul>
+        </ul>
+</ul>
+</div>
 
   `;
 }
-
-
 
 
 
@@ -316,14 +328,6 @@ function watchSubmit() {
         const titleTarget = $(event.currentTarget).find('.title');
         let title = titleTarget.val() || "Test";
 
-        let resObject = {
-            address,
-            riskCategory,
-            siteClass,
-            respModFtr,
-            seisImpFtr,
-            title
-        }
 
         // clear out the input
         addressTarget.val("");
@@ -341,32 +345,23 @@ function watchSubmit() {
 
 
         getLatLongFromAddress(geoCodeURL, address).then(geo => {
-            let promises = [usgsApiRequest(geo, riskCategory, siteClass, otherInfo, title), getAtcWindSpeed(atcHazardURL, geo)];
+            let promises = [usgsApiRequest(geo, riskCategory, siteClass, otherInfo, title), getAtcWindSpeed(atcWindURL, geo), getAtcSnowLoad(atcSnowURL, geo)];
             Promise.all(promises).then(results => {
                 let res = {
-                    'usgs': results[0],
-                    'atc': results[1]
+                    'seismic': results[0],
+                    'wind': results[1],
+                    'snow': results[2]
                 }
-
+                let seisData = res.seismic;
+                let winData = res.wind;
+                let snowData = res.snow;
                 console.log('res', res);
+                getGraph(seisData);
+                renderData(seisData, winData, snowData, otherInfo)
             });
-        
+            initMap(geo);
+
         })
-
-    //     let p1 = getLatLongFromAddress(geoCodeURL, address); 
-    //     let p2 =  p1.then((geo) =>{
-    //         return usgsApiRequest(geo, riskCategory, siteClass, otherInfo, title);
-    //     });
-
-    // Promise.all([p1, p2]).then(values => {
-    //     let geoData = values[0];
-    //     let seisData = values[1];
-    //     // let WindData = ...
-    //     renderSeisResult(seisData, otherInfo);
-    //     getGraph(seisData);
-    //     initMap(geoData);
-        
-    // });
 
 });
 }
