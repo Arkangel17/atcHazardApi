@@ -49,7 +49,7 @@ function getLatLong(res) {
 }
 
 
-function usgsData(res){
+function usgsData(res) {
     resData = res.data;
     return resData
 }
@@ -65,40 +65,40 @@ function renderData(seisData, winData, snowData, otherInfo) {
 function getAtcWindSpeed(atcWindURL, geo) {
 
     return axios.get(atcWindURL, {
-        params: {
-            lat: geo.lat,
-            lng: geo.lng
-        },
-        headers: {
-            "api-key": "jag25mnn50pqucyk" 
-        }
-    })
-    .then(function(response){
-        return response;
-    })
-    .catch(function(reject){
-        console.log('error mo fo')
-    });
+            params: {
+                lat: geo.lat,
+                lng: geo.lng
+            },
+            headers: {
+                "api-key": "jag25mnn50pqucyk"
+            }
+        })
+        .then(function (response) {
+            return response;
+        })
+        .catch(function (reject) {
+            console.log('error mo fo')
+        });
 }
 
 
 function getAtcSnowLoad(atcSnowURL, geo) {
 
     return axios.get(atcSnowURL, {
-        params: {
-            lat: geo.lat,
-            lng: geo.lng
-        },
-        headers: {
-            "api-key": "jag25mnn50pqucyk" 
-        }
-    })
-    .then(function(response){
-        return response;
-    })
-    .catch(function(reject){
-        console.log('error mo fo')
-    });
+            params: {
+                lat: geo.lat,
+                lng: geo.lng
+            },
+            headers: {
+                "api-key": "jag25mnn50pqucyk"
+            }
+        })
+        .then(function (response) {
+            return response;
+        })
+        .catch(function (reject) {
+            console.log('error mo fo')
+        });
 }
 
 
@@ -344,28 +344,28 @@ function watchSubmit() {
         };
 
 
-        getLatLongFromAddress(geoCodeURL, address).then(geo => {
-            let promises = [usgsApiRequest(geo, riskCategory, siteClass, otherInfo, title), getAtcWindSpeed(atcWindURL, geo), getAtcSnowLoad(atcSnowURL, geo)];
-            Promise.all(promises).then(results => {
-                let res = {
-                    'seismic': results[0],
-                    'wind': results[1],
-                    'snow': results[2]
-                }
-                let seisData = res.seismic;
-                let winData = res.wind;
-                let snowData = res.snow;
-                console.log('res', res);
-                getGraph(seisData);
-                renderData(seisData, winData, snowData, otherInfo)
-            });
-            initMap(geo);
+        for(i = 0; i < 5; i++){
+            getLatLongFromAddress(geoCodeURL, address).then(geo => {
+                let promises = [usgsApiRequest(geo, riskCategory, siteClass, otherInfo, title), getAtcWindSpeed(atcWindURL, geo), getAtcSnowLoad(atcSnowURL, geo)];
+                Promise.all(promises).then(results => {
+                    let res = {
+                        'seismic': results[0],
+                        'wind': results[1],
+                        'snow': results[2]
+                    }
+                    let seisData = res.seismic;
+                    let winData = res.wind;
+                    let snowData = res.snow;
+                    console.log('res', res);
+                    getGraph(seisData);
+                    renderData(seisData, winData, snowData, otherInfo)
+                });
+                initMap(geo);
 
-        })
+            })
+        };
 
-});
+    });
 }
 
 $(watchSubmit);
-
-
