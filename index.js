@@ -267,12 +267,13 @@ function getGraph(results) {
         return item[1];
     });
 
+   
     let lineChart = new Chart(ctx, {
         type: 'line',
         data: {
             labels: xDataPts,
-            xAxisID: 'what',
-            yAxisID: 'hello',
+            xAxisID: 'do what you say',
+            yAxisID: 'say what you want',
             datasets: [{
                 label: "Sds Data Pts",
                 backgroundColor: "rgb(224,255,255)",
@@ -288,6 +289,13 @@ function getGraph(results) {
             maintainAspectRatio: true,
             scales: {
                 yAxes: [{
+                    scaleLabel: {
+                        display: true,
+                        labelString: 'ACCEL (g.)',
+                        fontStyle: 'bold',
+                        fontSize: 14
+
+                    },
                     stacked: true,
                     gridLines: {
                         display: true,
@@ -295,6 +303,12 @@ function getGraph(results) {
                     }
                 }],
                 xAxes: [{
+                    scaleLabel: {
+                        display: true,
+                        labelString: 'PERIOD (sec.)',
+                        fontStyle: 'bold',
+                        fontSize: 14
+                    },
                     gridLines: {
                         display: true,
                         color: "rgba(151,255,255,0.3)"
@@ -303,6 +317,7 @@ function getGraph(results) {
             }
         }
 
+    
     });
 }
 
