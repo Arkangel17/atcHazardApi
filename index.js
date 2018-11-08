@@ -1,102 +1,122 @@
 const usgsURL = 'https://earthquake.usgs.gov/ws/designmaps/asce7-10.json';
 const geoCodeURL = 'https://maps.googleapis.com/maps/api/geocode/json?';
-
-// let pdf = new jsPDF();
-
-// let button = document.querySelector('button');
-
-// let content = document.querySelector('#pdfContent');
-
-// button.addEventListener('click', printPDF);
-
-// function printPDF () {
-//     pdf.text(content);
-//     pdf.save();
-// }
+const atcWindURL = "https://api-hazards.atcouncil.org/public/v1/wind.json?";
+const atcSnowURL = "https://api-hazards.atcouncil.org/public/v1/snow.json?";
 
 
-// var pdf = new jsPDF();
-// var specialElementHandlers = {
-//     '#editor': function (element, renderer) {
-//         return true;
-//     }
-// };
 
-// let margins = {
-//     top: 5,
-//     bottom: 60,
-//     left: 5,
-//     width: 1600
-// };
+function getLatLongFromAddress(geoCodeURL, address) {
 
-// $('#savePDF').click(function () {
-//     pdf.fromHTML($('#pdfContent').html(), margins.left, margins.top, {
-//         'width': margins.width,
-//         'elementHandlers': specialElementHandlers
-//     }, function (bla) {
-//         pdf.save('saveInCallback.pdf');
-//     });
-// });
-
-
-//request through axios..
-function getLatLongFromAddress(geoCodeURL, address){
-request = axios.get(geoCodeURL, {
-        params: {
-            address,
-            key: 'AIzaSyAS1ppQZ0RbK3k5Zv121KdtG61DqY_Mrno'
-        }
-    })
-    .then(function (response) {
-        latLong = response.data.results[0].geometry.location;
-        return latLong;
-    })
-    .catch(function (error) {
-        console.log('error', error);
-    });
-
-return request;
+    return axios.get(geoCodeURL, {
+            params: {
+                address,
+                key: 'AIzaSyAS1ppQZ0RbK3k5Zv121KdtG61DqY_Mrno'
+            }
+        })
+        .then(function (response) {
+            return getLatLong(response);
+        })
+        .catch(function (reject) {
+            console.log('error');
+        });
 }
 
 
-//STUDY PROMISES + CLOSURES + CALLBACK FUNCTIONS
+function usgsApiRequest(geo, riskCategory, siteClass, otherInfo, title) {
 
-function usgsApiRequest(riskCategory, siteClass, otherInfo, title, callback) {
-
-    return function (geo) {
-        const query = {
-            latitude: geo.lat,
-            longitude: geo.lng,
-            riskCategory,
-            siteClass,
-            title
-        };
-
-        $.getJSON(usgsURL, query, function (results) {
-            callback(results, otherInfo);
-            getGraph(results);
-            initMap(query);
+    return axios.get(usgsURL, {
+            params: {
+                latitude: geo.lat,
+                longitude: geo.lng,
+                riskCategory,
+                siteClass,
+                title
+            }
+        })
+        .then(function (response) {
+            return usgsData(response);
+        })
+        .catch(function (reject) {
+            console.log(' usgs: error');
         });
 
-    }
-
 }
 
-function placesAPI(){
+
+function getLatLong(res) {
+    latLong = res.data.results[0].geometry.location;
+    return latLong;
+}
+
+
+function usgsData(res){
+    resData = res.data;
+    return resData
+}
+
+
+function renderData(seisData, winData, snowData, otherInfo) {
+    let results = renderResult(seisData, winData, snowData, otherInfo);
+    $('.desCritInfo').html(results);
+    return results;
+}
+
+
+function getAtcWindSpeed(atcWindURL, geo) {
+
+    return axios.get(atcWindURL, {
+        params: {
+            lat: geo.lat,
+            lng: geo.lng
+        },
+        headers: {
+            "api-key": "jag25mnn50pqucyk" 
+        }
+    })
+    .then(function(response){
+        return response;
+    })
+    .catch(function(reject){
+        console.log('error mo fo')
+    });
+}
+
+
+function getAtcSnowLoad(atcSnowURL, geo) {
+
+    return axios.get(atcSnowURL, {
+        params: {
+            lat: geo.lat,
+            lng: geo.lng
+        },
+        headers: {
+            "api-key": "jag25mnn50pqucyk" 
+        }
+    })
+    .then(function(response){
+        return response;
+    })
+    .catch(function(reject){
+        console.log('error mo fo')
+    });
+}
+
+
+function placesAPI() {
     let input = document.getElementById('autocomplete');
     let autocomplete = new google.maps.places.Autocomplete(input);
 }
 
 
 
-function initMap(query){
+function initMap(query) {
 
     let location = {
-        lat: query.latitude,
-        lng: query.longitude
+        lat: query.lat,
+        lng: query.lng
     };
 
-    let map = new google.maps.Map(document.getElementById('map'),{
+    let map = new google.maps.Map(document.getElementById('map'), {
         center: location,
         zoom: 17
     });
@@ -109,69 +129,117 @@ function initMap(query){
     let image = {
         "url": imageURL,
         "scaledSize": new google.maps.Size(30, 30),
-        "origin": new google.maps.Point(0,0),
-        "anchor": new google.maps.Point(0,0)
+        "origin": new google.maps.Point(0, 0),
+        "anchor": new google.maps.Point(0, 0)
     };
 
     let frogPin = new google.maps.Marker({
-       position: location,
-       map,
-       icon: image,
-       title: 'hello'
+        position: location,
+        map,
+        icon: image,
+        title: 'hello'
     });
 
 
-};
+}
 
 
 
-function renderResult(data, otherInfo) {
-    let store = data;
-    let cs = (store.response.data.sds * otherInfo.seisImpFtr) / otherInfo.respModFtr;
-  return `
+function renderResult(seisData, winData, snowData, otherInfo) {
+
+    let cs = (seisData.response.data.sds * otherInfo.seisImpFtr) / otherInfo.respModFtr;
+
+    return `
     <div>
         <ul>
-            <li> Date: ${store.request.date}</li>
-            <li> Project: ${store.request.parameters.title}</li>
+            <li> Date: ${seisData.request.date}</li>
+            <li> Project: ${seisData.request.parameters.title}</li>
+            <li> Address: ${otherInfo.address}</li>
                 <ul>    
-                    <li>Latitude:  ${store.request.parameters.latitude}</li>
-                    <li>Longitude:  ${store.request.parameters.longitude}</li>
-                    <li>Risk Category:  ${store.request.parameters.riskCategory}</li>
-                    <li>Site Class:  ${store.request.parameters.siteClass}</li>
+                    <li>Latitude:  ${seisData.request.parameters.latitude}</li>
+                    <li>Longitude:  ${seisData.request.parameters.longitude}</li>
+                    <li>Risk Category:  ${seisData.request.parameters.riskCategory}</li>
+                    <li>Site Class:  ${seisData.request.parameters.siteClass}</li>
                 </ul>
-            <li> Code: ${store.request.referenceDocument}</li>            
+            <li> Code: ${seisData.request.referenceDocument}</li>            
         </ul>
     </div>
 
     <div>
         <ul>
-            <li> USGS Design Criteria </li>
+            <li class="bold"> USGS Design Criteria </li>
                 <ul>
-                    <li> PGA: ${store.response.data.pga}</li>
-                    <li> Ss: ${store.response.data.ss}</li>
-                    <li> S1: ${store.response.data.s1}</li> 
-                    <li> Sds: ${store.response.data.sds}</li>
-                    <li> Sd1: ${store.response.data.sd1}</li>
-                    <li> SDC: ${store.response.data.sdc}</li>
+                    <li> pga: ${seisData.response.data.pga}</li>
+                    <li> Fpga: ${seisData.response.data.fpga}</li>
+                    <li> PgaM: ${seisData.response.data.pgam}</li>
+                    <li> Ss: ${seisData.response.data.ss}</li>
+                    <li> S1: ${seisData.response.data.s1}</li> 
+                    <li> Sm1: ${seisData.response.data.sm1}</li>
+                    <li> Sms: ${seisData.response.data.sms}</li>
+                    <li> Fa: ${seisData.response.data.fa}</li>
+                    <li> Fv: ${seisData.response.data.fv}</li>
+                    <li> Sds: ${seisData.response.data.sds}</li>
+                    <li> Sd1: ${seisData.response.data.sd1}</li>
+                    <li> SDC.Cntrl: ${seisData.response.data.sdc}</li>
                 </ul>
-        </ul>        
+        </ul>   
     </div>
     <div>
     <ul>
-        <li> Seismic Properties</li>
+        <li class="bold"> Seismic Properties</li>
             <ul>
                 <li> Cs: ${cs}</li>
             </ul>
     </ul>        
 </div>
+
+<div>
+<ul>
+    <li class="bold"> ATC WINDSPEEDS </li>
+        <ul>
+        <li> ELEVATION: ${winData.data.elevation} </li>
+            <li> ASCE 7-16: </li>
+                <ul>
+                    <li> riskCat I: ${winData.data.datasets[4].data.value} </li>
+                    <li> riskCat II: ${winData.data.datasets[5].data.value}</li>
+                    <li> riskCat III: ${winData.data.datasets[6].data.value}</li>
+                    <li> riskCat IV: ${winData.data.datasets[7].data.value}</li>
+                </ul>
+        </ul>
+        <ul>
+            <li> ASCE 7-10: </li>
+                <ul>
+                    <li> riskCat I: ${winData.data.datasets[12].data.value}</li>
+                    <li> riskCat II: ${winData.data.datasets[13].data.value}</li>
+                    <li> riskCat III-IV: ${winData.data.datasets[14].data.value}</li>
+                </ul>
+        </ul>
+</ul>
+</div>
+
+<div>
+<ul>
+    <li class="bold"> ATC SNOW LOADS </li>
+        <ul>
+        <li> ELEVATION: ${snowData.data.elevation} </li>
+            <li> ASCE 7-16: </li>
+                <ul>
+                    <li>Grd Snow Load: ${snowData.data.datasets[0].data.value} </li>
+                </ul>
+        </ul>
+        <ul>
+            <li> ASCE 7-10: </li>
+                <ul>
+                    <li>Grd Snow Load: ${snowData.data.datasets[1].data.value}</li>
+                </ul>
+        </ul>
+</ul>
+</div>
+
   `;
 }
 
-function getSeisData(data, otherInfo) {
-    let results = renderResult(data, otherInfo);
-    $('.desCritInfo').html(results);
-    return results;
-}
+
 
 //Dynamic UI Functions....
 $('.hover').mousemove(function (e) {
@@ -179,42 +247,40 @@ $('.hover').mousemove(function (e) {
         $('#hintBox').text(hoverText).show();
         let x = e.screenX - this.offsetLeft;
         let y = e.screenY - this.offsetTop;
-        $('#hintBox').css('top', y).css('left', x);
-        console.log('x', x);
-        console.log('y', y);
 
     })
     .mouseout(function () {
         $('#hintBox').hide();
-});
+    });
 
-//what the hell
+
 
 function getGraph(results) {
     let ctx = $('#lineChart');
     let sdSpectrum = results.response.data.sdSpectrum;
-    let sdSpecType = typeof(sdSpectrum);
+    let sdSpecType = typeof (sdSpectrum);
 
-    let xDataPts = sdSpectrum.map((item, index)=>{
+    let xDataPts = sdSpectrum.map((item, index) => {
         return item[0];
     });
-    let yDataPts = sdSpectrum.map((item, index)=>{
+    let yDataPts = sdSpectrum.map((item, index) => {
         return item[1];
     });
 
+   
     let lineChart = new Chart(ctx, {
         type: 'line',
         data: {
             labels: xDataPts,
-            xAxisID: 'what',
-            yAxisID: 'hello',
+            xAxisID: 'do what you say',
+            yAxisID: 'say what you want',
             datasets: [{
                 label: "Sds Data Pts",
                 backgroundColor: "rgb(224,255,255)",
-                borderColor: "rgb(5,237,255)",
+                borderColor: " rgb(93, 230, 240)",
                 borderWidth: 2,
                 hoverBackgroundColor: "rgb(187,255,255)",
-                hoverBorderColor: "rgb(5,237,255)",
+                hoverBorderColor: " rgb(93, 230, 240)",
                 data: yDataPts,
             }]
         },
@@ -223,6 +289,13 @@ function getGraph(results) {
             maintainAspectRatio: true,
             scales: {
                 yAxes: [{
+                    scaleLabel: {
+                        display: true,
+                        labelString: 'ACCEL (g.)',
+                        fontStyle: 'bold',
+                        fontSize: 14
+
+                    },
                     stacked: true,
                     gridLines: {
                         display: true,
@@ -230,6 +303,12 @@ function getGraph(results) {
                     }
                 }],
                 xAxes: [{
+                    scaleLabel: {
+                        display: true,
+                        labelString: 'PERIOD (sec.)',
+                        fontStyle: 'bold',
+                        fontSize: 14
+                    },
                     gridLines: {
                         display: true,
                         color: "rgba(151,255,255,0.3)"
@@ -238,6 +317,7 @@ function getGraph(results) {
             }
         }
 
+    
     });
 }
 
@@ -247,27 +327,25 @@ function watchSubmit() {
     placesAPI();
 
     $('.designCrit').submit(event => {
+
         event.preventDefault();
+
         const addressTarget = $(event.currentTarget).find('.address');
-        const address = addressTarget.val();
-        // const latitudeTarget = $(event.currentTarget).find('.latitude');
-        // const latitude = latitudeTarget.val();
-        // const longitudeTarget = $(event.currentTarget).find('.longitude');
-        // const longitude = longitudeTarget.val();
+        let address = addressTarget.val() || "99 Green Street, San Francisco, CA, USA";
         const riskCatTarget = $(event.currentTarget).find('.riskCategory');
-        const riskCategory = riskCatTarget.val();
+        let riskCategory = riskCatTarget.val() || "III";
         const siteClassTarget = $(event.currentTarget).find('.siteClass');
-        const siteClass = siteClassTarget.val();
+        let siteClass = siteClassTarget.val() || "C";
         const respModFtrTarget = $(event.currentTarget).find('.respModFtr');
-        const respModFtr = parseFloat(respModFtrTarget.val());
+        let respModFtr = parseFloat(respModFtrTarget.val()) || "6.5";
         const seisImpFtrTarget = $(event.currentTarget).find('.seisImpFtr');
-        const seisImpFtr = parseFloat(seisImpFtrTarget.val());
+        let seisImpFtr = parseFloat(seisImpFtrTarget.val()) || "1.25";
         const titleTarget = $(event.currentTarget).find('.title');
-        const title = titleTarget.val();
+        let title = titleTarget.val() || "Test";
+
+
         // clear out the input
         addressTarget.val("");
-        // latitudeTarget.val("");
-        // longitudeTarget.val("");
         riskCatTarget.val("");
         siteClassTarget.val("");
         respModFtrTarget.val("");
@@ -276,15 +354,33 @@ function watchSubmit() {
 
         let otherInfo = {
             respModFtr,
-            seisImpFtr
+            seisImpFtr,
+            address
         };
 
 
-        let geo = getLatLongFromAddress(geoCodeURL, address)
-            .then(usgsApiRequest(riskCategory, siteClass, otherInfo, title, getSeisData));
-        
-        console.log('res', typeof(geo));
-    });
-  }
+        getLatLongFromAddress(geoCodeURL, address).then(geo => {
+            let promises = [usgsApiRequest(geo, riskCategory, siteClass, otherInfo, title), getAtcWindSpeed(atcWindURL, geo), getAtcSnowLoad(atcSnowURL, geo)];
+            Promise.all(promises).then(results => {
+                let res = {
+                    'seismic': results[0],
+                    'wind': results[1],
+                    'snow': results[2]
+                }
+                let seisData = res.seismic;
+                let winData = res.wind;
+                let snowData = res.snow;
+                console.log('res', res);
+                getGraph(seisData);
+                renderData(seisData, winData, snowData, otherInfo)
+            });
+            initMap(geo);
+
+        })
+
+});
+}
 
 $(watchSubmit);
+
+
