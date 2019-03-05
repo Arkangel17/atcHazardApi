@@ -9,10 +9,7 @@
     crossorigin="anonymous"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.7.2/Chart.min.js"></script>
     <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
-    <!-- async defer -->
-    <script src="https://maps.googleapis.com/maps/api/js?libraries=places&key=AIzaSyAS1ppQZ0RbK3k5Zv121KdtG61DqY_Mrno">
-    </script>
-    <!-- <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/1.4.1/jspdf.min.js" integrity="sha256-tzkPfJgrAehd0mUYdxwWvn+TQrk2VjRJL/xP9iW5fhk=" crossorigin="anonymous"></script>  -->
+    <script src="https://maps.googleapis.com/maps/api/js?libraries=places&key=AIzaSyAS1ppQZ0RbK3k5Zv121KdtG61DqY_Mrno"></script>
 
     <link href="index.css" rel="stylesheet" type="text/css" />
 
@@ -38,15 +35,35 @@
         <label for="query"></label>
         <input type="text" class="address" id="autocomplete" placeholder="address: street city state">
         <br>
-        <input type="text" class="riskCategory hover" id="inputbox" hintText="Enter I, II, III, or VI" placeholder="riskCategory: Enter I, II, III, or IV">
+        <input type="text" list="riskCat" class="riskCategory hover" id="inputbox" placeholder="riskCategory">
+        <datalist id="riskCat">
+                <option value="I">
+                <option value="II">
+                <option value="III">
+                <option value="IV">
+            </datalist>
         <br>
-        <input type="text" class="siteClass" id="inputbox" placeholder="siteClass: Enter B, C, or D">
+        <input type="text"  list="sdc" class="siteClass" id="inputbox" placeholder="siteClass">
+        <datalist id="sdc">
+                <option value="B">
+                <option value="C">
+                <option value="D">
+            </datalist>
         <br>
         <input type="text" class="respModFtr" id="inputbox" placeholder="respModFtr: Enter 1 - 8">
         <br>
         <input type="text" class="seisImpFtr" id="inputbox" placeholder="seisImpFtr: Enter 1 - 1.5">
         <br>
         <input type="text" class="title" id="inputbox" placeholder="Project Title">
+        <br>
+        <input list="bldgTypes" class="bldgTypes" id="inputbox" placeholder="bldgType">
+            <datalist id="bldgTypes">
+                <option value="P-12-LS-R">
+                <option value="P-12-LS-R">
+                <option value="P-12-LC">
+                <option value="P-12-LE">
+                <option value="P-12-SE-L">
+            </datalist>
         <br>
         <button type="submit" id="submit">Submit</button>
     </form>

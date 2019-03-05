@@ -154,6 +154,7 @@ function renderResult(seisData, winData, snowData, otherInfo) {
         <ul>
             <li> Date: ${seisData.request.date}</li>
             <li> Project: ${seisData.request.parameters.title}</li>
+            <li> Building Type: ${otherInfo.bldgType}</li>
             <li> Address: ${otherInfo.address}</li>
                 <ul>    
                     <li>Latitude:  ${seisData.request.parameters.latitude}</li>
@@ -181,6 +182,7 @@ function renderResult(seisData, winData, snowData, otherInfo) {
                     <li> Sds: ${seisData.response.data.sds}</li>
                     <li> Sd1: ${seisData.response.data.sd1}</li>
                     <li> SDC.Cntrl: ${seisData.response.data.sdc}</li>
+                    <li> TL: ${seisData.response.data['t-sub-l']}<li>
                 </ul>
         </ul>   
     </div>
@@ -341,7 +343,9 @@ function watchSubmit() {
         const seisImpFtrTarget = $(event.currentTarget).find('.seisImpFtr');
         let seisImpFtr = parseFloat(seisImpFtrTarget.val()) || "1.25";
         const titleTarget = $(event.currentTarget).find('.title');
-        let title = titleTarget.val() || "Test";
+        let title = titleTarget.val() || "MAGWOOD";
+        const bldgTypesTarget = $(event.currentTarget).find('.bldgTypes');
+        let bldgType = bldgTypesTarget.val() || "P-12-LS-R";
 
 
         // clear out the input
@@ -351,11 +355,13 @@ function watchSubmit() {
         respModFtrTarget.val("");
         seisImpFtrTarget.val("");
         titleTarget.val("");
+        bldgTypesTarget.val("");
 
         let otherInfo = {
             respModFtr,
             seisImpFtr,
-            address
+            address,
+            bldgType
         };
 
 
